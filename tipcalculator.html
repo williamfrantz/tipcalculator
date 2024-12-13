@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurant Tip Calculator</title>
+    <style>
+        /* CSS Reset and Variables */
+        :root {
+            --primary-color: #4CAF50;
+            --hover-color: #45a049;
+            --background-color: #f5f5f5;
+            --result-background: #e8f5e9;
+            --border-radius: 8px;
+            --spacing: 20px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Main Styles */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            padding: var(--spacing);
+            background-color: #f0f2f5;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .calculator {
+            background-color: white;
+            padding: var(--spacing);
+            border-radius: var(--border-radius);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .calculator h2 {
+            color: #333;
+            margin-bottom: var(--spacing);
+            text-align: center;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 5px rgba(76, 175, 80, 0.2);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: var(--spacing);
+        }
+
+        button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+
+        .calculate-btn {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .calculate-btn:hover {
+            background-color: var(--hover-color);
+        }
+
+        .reset-btn {
+            background-color: #f44336;
+            color: white;
+        }
+
+        .reset-btn:hover {
+            background-color: #d32f2f;
+        }
+
+        .result {
+            margin-top: var(--spacing);
+            padding: 15px;
+            border-radius: var(--border-radius);
+            background-color: var(--result-background);
+            display: none;
+        }
+
+        .result.show {
+            display: block;
+        }
+
+        .error {
+            color: #f44336;
+            margin-top: 5px;
+            font-size: 14px;
+        }
+
+        .tip-options {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .tip-option {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .tip-option.selected {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .split-bill {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #ddd;
+        }
+
+        .per-person {
+            font-weight: bold;
+            color: var(--primary-color);
+            padding-top: 10px;
+            border-top: 1px dashed #ddd;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="calculator">
+            <h2>Restaurant Tip Calculator</h2>
+            <form id="tipForm" onsubmit="return false;">
+                <div class="input-group">
+                    <label for="billAmount">Bill Amount ($)</label>
+                    <input type="number" id="billAmount" min="0" step="0.01" required>
+                    <div class="error" id="billError"></div>
+                </div>
+
+                <div class="input-group">
+                    <label>Quick Tip Selection</label>
+                    <div class="tip-options" id="tipOptions">
+                        <div class="tip-option" data-tip="15">15%</div>
+                        <div class="tip-option" data-tip="18">18%</div>
+                        <div class="tip-option" data-tip="20">20%</div>
+                    </div>
+                </div>
+                
+                <div class="input-group">
+                    <label for="tipPercentage">Custom Tip (%)</label>
+                    <input type="number" id="tipPercentage" min="0" max="100" value="15" required>
+                    <div class="error" id="tipError"></div>
+                </div>
+
+                <div class="input-group split-bill">
+                    <label for="numberOfPeople">Split Between (# of People)</label>
+                    <input type="number" id="numberOfPeople" min="1" value="1" required>
+                    <div class="error" id="peopleError"></div>
+                </div>
+
+                <div class="button-group">
+                    <button type="submit" class="calculate-btn" onclick="TipCalculator.calculate()">Calculate Tip</button>
+                    <button type="button" class="reset-btn" onclick="TipCalculator.reset()">Reset</button>
+                </div>
+                
+                <div class="result" id="result"></div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const TipCalculator = {
+            elements: {
+                form: document.getElementById('tipForm'),
+                billAmount: document.getElementById('billAmount'),
+                tipPercentage: document.getElementById('tipPercentage'),
+                numberOfPeople: document.getElementById('numberOfPeople'),
+                result: document.getElementById('result'),
+                billError: document.getElementById('billError'),
+                tipError: document.getElementById('tipError'),
+                peopleError: document.getElementById('peopleError'),
+                tipOptions: document.getElementById('tipOptions')
+            },
+
+            init() {
+                this.setupEventListeners();
+            },
+
+            setupEventListeners() {
+                this.elements.tipOptions.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('tip-option')) {
+                        this.handleTipOptionClick(e.target);
+                    }
+                });
+
+                this.elements.form.addEventListener('input', () => {
+                    this.clearErrors();
+                });
+            },
+
+            handleTipOptionClick(option) {
+                document.querySelectorAll('.tip-option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                option.classList.add('selected');
+                this.elements.tipPercentage.value = option.dataset.tip;
+            },
+
+            validate() {
+                let isValid = true;
+                this.clearErrors();
+
+                const billAmount = parseFloat(this.elements.billAmount.value);
+                const tipPercentage = parseFloat(this.elements.tipPercentage.value);
+                const numberOfPeople = parseInt(this.elements.numberOfPeople.value);
+
+                if (isNaN(billAmount) || billAmount <= 0) {
+                    this.elements.billError.textContent = 'Please enter a valid bill amount';
+                    isValid = false;
+                }
+
+                if (isNaN(tipPercentage) || tipPercentage < 0 || tipPercentage > 100) {
+                    this.elements.tipError.textContent = 'Please enter a valid tip percentage (0-100)';
+                    isValid = false;
+                }
+
+                if (isNaN(numberOfPeople) || numberOfPeople < 1) {
+                    this.elements.peopleError.textContent = 'Please enter a valid number of people';
+                    isValid = false;
+                }
+
+                return isValid;
+            },
+
+            clearErrors() {
+                this.elements.billError.textContent = '';
+                this.elements.tipError.textContent = '';
+                this.elements.peopleError.textContent = '';
+            },
+
+            calculate() {
+                if (!this.validate()) return;
+
+                const billAmount = parseFloat(this.elements.billAmount.value);
+                const tipPercentage = parseFloat(this.elements.tipPercentage.value);
+                const numberOfPeople = parseInt(this.elements.numberOfPeople.value);
+                
+                const tipAmount = billAmount * (tipPercentage / 100);
+                const totalAmount = billAmount + tipAmount;
+                
+                const billPerPerson = billAmount / numberOfPeople;
+                const tipPerPerson = tipAmount / numberOfPeople;
+                const totalPerPerson = totalAmount / numberOfPeople;
+
+                this.displayResults(
+                    billAmount, 
+                    tipAmount, 
+                    totalAmount, 
+                    numberOfPeople,
+                    billPerPerson,
+                    tipPerPerson,
+                    totalPerPerson
+                );
+            },
+
+            displayResults(bill, tip, total, people, billPerPerson, tipPerPerson, totalPerPerson) {
+                this.elements.result.innerHTML = `
+                    <h3>Results</h3>
+                    <p>Bill Amount: $${bill.toFixed(2)}</p>
+                    <p>Tip Amount: $${tip.toFixed(2)}</p>
+                    <p>Total Amount: $${total.toFixed(2)}</p>
+                    ${people > 1 ? `
+                        <div class="per-person">
+                            <p>Split between ${people} people:</p>
+                            <p>Bill per person: $${billPerPerson.toFixed(2)}</p>
+                            <p>Tip per person: $${tipPerPerson.toFixed(2)}</p>
+                            <p>Total per person: $${totalPerPerson.toFixed(2)}</p>
+                        </div>
+                    ` : ''}
+                `;
+                this.elements.result.classList.add('show');
+            },
+
+            reset() {
+                this.elements.form.reset();
+                this.elements.result.classList.remove('show');
+                this.clearErrors();
+                document.querySelectorAll('.tip-option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            TipCalculator.init();
+        });
+    </script>
+</body>
+</html>
